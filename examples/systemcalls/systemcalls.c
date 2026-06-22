@@ -1,4 +1,8 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,7 +20,10 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-
+    int outcome = system(cmd);
+    if (outcome != 0) {
+        return false;
+    }
     return true;
 }
 
@@ -47,7 +54,7 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 /*
  * TODO:
@@ -58,9 +65,27 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    pid_t fork_pid = fork();
+    if (fork_pid == -1) {
+        perror("fork() failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (!fork_pid) {
+        int execv_outcome = execv(command[0], command);
+        if (execv_outcome == -1) {
+            perror("execv() failure");
+            exit(EXIT_FAILURE);
+        }
+        fork_pid = wait(&execv_outcome);
+    }
+    
 
     va_end(args);
 
+    if (fork_pid != 0) {
+        return false;
+    }
     return true;
 }
 
