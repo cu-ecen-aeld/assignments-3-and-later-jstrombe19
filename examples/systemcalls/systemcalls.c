@@ -1,8 +1,9 @@
 #include "systemcalls.h"
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <unistd.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -66,26 +67,41 @@ bool do_exec(int count, ...)
  *
 */
     pid_t fork_pid = fork();
-    if (fork_pid == -1) {
-        perror("fork() failed");
-        exit(EXIT_FAILURE);
-    }
-
-    if (!fork_pid) {
-        int execv_outcome = execv(command[0], command);
-        if (execv_outcome == -1) {
-            perror("execv() failure");
-            exit(EXIT_FAILURE);
-        }
-        fork_pid = wait(&execv_outcome);
-    }
-    
-
-    va_end(args);
-
-    if (fork_pid != 0) {
+    if (fork_pid < 0) {
+        perror("fork() failed\n");
         return false;
     }
+
+    // find the child
+    if (fork_pid == 0) {
+        for(int i = 0; i < count+1; i++) {
+            printf("command[%d]: %s\n", i, command[i]);
+        }
+        
+        execv(command[0], command);
+        // printf("returning false now due to execev() failure case\n\n");
+        // return false;
+    } else {
+        int execv_status;
+        wait(&execv_status);
+        if (WIFEXITED(execv_status)) {
+            /* 
+            exit code is actually what needs to be checked - not simply status
+            -> errors can still exit with a normal status
+            */ 
+            int exit_code = WEXITSTATUS(execv_status);
+            printf("child exited normally with status: %d\n", exit_code);
+            if (exit_code != 0) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    
+    va_end(args);
+
     return true;
 }
 
