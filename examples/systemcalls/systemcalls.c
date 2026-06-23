@@ -75,13 +75,14 @@ bool do_exec(int count, ...)
     */
     struct stat path_stat;
     if (stat(command[0], &path_stat) != 0) {
+        perror("ERROR: invalid path provided\n");
         return false;
     }
 
     fflush(stdout);
     pid_t fork_pid = fork();
     if (fork_pid < 0) {
-        perror("fork() failed\n");
+        perror("ERROR: fork() failed\n");
         return false;
     }
 
@@ -106,12 +107,14 @@ bool do_exec(int count, ...)
             int exit_code = WEXITSTATUS(execv_status);
             printf("child exited normally with status: %d\n", exit_code);
             if (exit_code != 0) {
+                perror("ERROR: execv did not exit with a normal exit status\n");
                 return false;
             }
         } else {
             /*
             still need this exit case - an abnormal status definitely indicates problems
             */
+            perror("ERROR: execv failed\n");
             return false;
         }
     }
@@ -162,9 +165,9 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     switch (kidpid = fork()) {
     case -1: perror("fork"); abort();
     case 0:
-        if (dup2(fd, STDOUT_FILENO) < 0) { perror("dup2"); abort(); }
+        if (dup2(fd, STDOUT_FILENO) < 0) { perror("ERROR: dup2 failed\n"); abort(); }
         close(fd);
-        execvp(command[0], command); perror("execvp"); abort();
+        execv(command[0], command); perror("ERROR: execv failed\n"); abort();
     default:
         close(fd);
         int execv_status;
@@ -177,12 +180,14 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
             int exit_code = WEXITSTATUS(execv_status);
             printf("child exited normally with status: %d\n", exit_code);
             if (exit_code != 0) {
+                perror("ERROR: execv did not exit with a normal exit status\n");
                 return false;
             }
         } else {
             /*
             still need this exit case - an abnormal status definitely indicates problems
             */
+            perror("ERROR: execv failed\n");
             return false;
         }
     }
