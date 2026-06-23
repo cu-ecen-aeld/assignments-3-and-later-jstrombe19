@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+
 
 /**
  * @param cmd the command to execute with system()
@@ -66,6 +69,16 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+
+    /*
+    verify command[0] is valid - otherwise, abort early
+    */
+    struct stat path_stat;
+    if (stat(command[0], &path_stat) != 0) {
+        return false;
+    }
+
+    fflush(stdout);
     pid_t fork_pid = fork();
     if (fork_pid < 0) {
         perror("fork() failed\n");
@@ -74,9 +87,10 @@ bool do_exec(int count, ...)
 
     // find the child
     if (fork_pid == 0) {
-        for(int i = 0; i < count+1; i++) {
-            printf("command[%d]: %s\n", i, command[i]);
-        }
+        // FOR DEBUGGING:
+        // for(int i = 0; i < count+1; i++) {
+        //     printf("command[%d]: %s\n", i, command[i]);
+        // }
         
         execv(command[0], command);
         // printf("returning false now due to execev() failure case\n\n");
@@ -95,6 +109,9 @@ bool do_exec(int count, ...)
                 return false;
             }
         } else {
+            /*
+            still need this exit case - an abnormal status definitely indicates problems
+            */
             return false;
         }
     }
@@ -123,7 +140,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
 
 
 /*
@@ -133,6 +150,43 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+
+    // Source - https://stackoverflow.com/a/13784315
+    // Posted by tmyklebu, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-06-22, License - CC BY-SA 3.0
+
+    int kidpid;
+    int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+    if (fd < 0) { perror("open"); abort(); }
+    fflush(stdout);
+    switch (kidpid = fork()) {
+    case -1: perror("fork"); abort();
+    case 0:
+        if (dup2(fd, STDOUT_FILENO) < 0) { perror("dup2"); abort(); }
+        close(fd);
+        execvp(command[0], command); perror("execvp"); abort();
+    default:
+        close(fd);
+        int execv_status;
+        wait(&execv_status);
+        if (WIFEXITED(execv_status)) {
+            /* 
+            exit code is actually what needs to be checked - not simply status
+            -> errors can still exit with a normal status
+            */ 
+            int exit_code = WEXITSTATUS(execv_status);
+            printf("child exited normally with status: %d\n", exit_code);
+            if (exit_code != 0) {
+                return false;
+            }
+        } else {
+            /*
+            still need this exit case - an abnormal status definitely indicates problems
+            */
+            return false;
+        }
+    }
+
 
     va_end(args);
 
