@@ -1,6 +1,6 @@
 #!/bin/bash
 # Script outline to install and build kernel.
-# Author: Siddhant Jajoo.
+# Authors: Siddhant Jajoo, Jared Stromberg
 
 set -e
 set -u
@@ -22,6 +22,12 @@ else
 fi
 
 mkdir -p ${OUTDIR}
+if [$? != 0 ]
+then
+    echo "Failed to create output directory at ${OUTDIR}"
+    exit 1
+fi
+
 
 cd "$OUTDIR"
 if [ ! -d "${OUTDIR}/linux-stable" ]; then
@@ -35,6 +41,14 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
+    # configure virtual ARM device to be simulated in QEMU
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- defconfig
+    # build a kernel image for booting with QEMU
+    make -j4 ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- all
+    # build any kernel modules
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- modules
+    # build the device tree
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- dtbs
 fi
 
 echo "Adding the Image in outdir"
@@ -69,6 +83,10 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # TODO: Add library dependencies to rootfs
 
 # TODO: Make device nodes
+# null device: dump output not needed
+sudo mknod -m 666 dev/null c 1 3
+# console device
+sudo mknod -m 666 dev/console c 5 1
 
 # TODO: Clean and build the writer utility
 
@@ -78,3 +96,6 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 # TODO: Chown the root directory
 
 # TODO: Create initramfs.cpio.gz
+find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
+cd "$OUTDIR"
+gzip -f initramfs.cpio
