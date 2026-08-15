@@ -82,7 +82,6 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "program interpreter"
 ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
-# libraries added as needed
 
 # TODO: Make device nodes
 # null device: dump output not needed
