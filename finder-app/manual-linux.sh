@@ -83,7 +83,6 @@ ${CROSS_COMPILE}readelf -a bin/busybox | grep "Shared library"
 
 # TODO: Add library dependencies to rootfs
 
-
 # TODO: Make device nodes
 # null device: dump output not needed
 sudo mknod -m 666 dev/null c 1 3
