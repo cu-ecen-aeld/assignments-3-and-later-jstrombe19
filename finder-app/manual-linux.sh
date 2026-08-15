@@ -41,6 +41,7 @@ if [ ! -e ${OUTDIR}/linux-stable/arch/${ARCH}/boot/Image ]; then
     git checkout ${KERNEL_VERSION}
 
     # TODO: Add your kernel build steps here
+    make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- mrproper
     # configure virtual ARM device to be simulated in QEMU
     make ARCH=arm64 CROSS_COMPILE=aarch64-none-linux-gnu- defconfig
     # build a kernel image for booting with QEMU
