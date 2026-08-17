@@ -71,15 +71,19 @@ git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
+    # start with a clean slate
+    make distclean
+    make defconfig
     # CONFIG_FEATURE_SUID_CONFIG -> needs to be enabled for applets to run
-    make menuconfig
+    # make menuconfig -> this is interactive; no tty present, so won't work
+    ./scripts/config --enable CONFIG_FEATURE_SUID
+    ./scripts/config --enable CONFIG_FEATURE_SUID_CONFIG
 else
     cd busybox
 fi
 
 # TODO: Make and install busybox
-make distclean
-make defconfig
+make olddefconfig ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX="${OUTDIR}/rootfs" ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
