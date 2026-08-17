@@ -22,7 +22,7 @@ else
 fi
 
 mkdir -p ${OUTDIR}
-if [$? != 0 ]
+if [ $? != 0 ]
 then
     echo "Failed to create output directory at ${OUTDIR}"
     exit 1
@@ -71,7 +71,8 @@ git clone git://busybox.net/busybox.git
     cd busybox
     git checkout ${BUSYBOX_VERSION}
     # TODO:  Configure busybox
-    CONFIG_FEATURE_SUID_CONFIG
+    # CONFIG_FEATURE_SUID_CONFIG -> needs to be enabled for applets to run
+    make menuconfig
 else
     cd busybox
 fi
