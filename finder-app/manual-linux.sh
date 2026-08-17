@@ -84,15 +84,15 @@ make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX="${OUTDIR}/rootfs" ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
 # set uid root 
-chown root:root /bin/busybox
-chmod u+s /bin/busybox
+chown root:root ${OUTDIR}/rootfs/bin/busybox
+chmod u+s ${OUTDIR}/rootfs/bin/busybox
 
 
 # TODO: Add library dependencies to rootfs
 # 1. Find needed dependencies
 echo "Library dependencies"
-${CROSS_COMPILE}readelf -a /bin/busybox | grep "program interpreter"
-${CROSS_COMPILE}readelf -a /bin/busybox | grep "Shared library"
+${CROSS_COMPILE}readelf -a ${OUTDIR}/rootfs/bin/busybox | grep "program interpreter"
+${CROSS_COMPILE}readelf -a ${OUTDIR}/rootfs/bin/busybox | grep "Shared library"
 # 2. Copy the files from sysroot into our root file system 
 # program interpreter needs to be in /lib
 # shared libraries need to be in /lib64
