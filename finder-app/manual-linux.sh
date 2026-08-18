@@ -76,14 +76,21 @@ git clone git://busybox.net/busybox.git
     make defconfig
     # CONFIG_FEATURE_SUID_CONFIG -> needs to be enabled for applets to run
     # make menuconfig -> this is interactive; no tty present, so won't work
-    ./scripts/config --enable CONFIG_FEATURE_SUID
-    ./scripts/config --enable CONFIG_FEATURE_SUID_CONFIG
+    
+    # This approach does not work; looking at busybox docs, it appears we need
+    # to modify the config file directly via sed for a non-interactive solution
+    # ./scripts/config --enable CONFIG_FEATURE_SUID
+    # ./scripts/config --enable CONFIG_FEATURE_SUID_CONFIG
+
+    # TODO: add 'sed'ed approach to config feature management here
 else
     cd busybox
 fi
 
 # TODO: Make and install busybox
-make olddefconfig ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+# This was part of the script / --enable approach above
+# make olddefconfig ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
+
 make ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE}
 make CONFIG_PREFIX="${OUTDIR}/rootfs" ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} install
 
@@ -111,10 +118,13 @@ sudo mknod -m 666 dev/console c 5 1
 
 # TODO: Clean and build the writer utility
 
+
 # TODO: Copy the finder related scripts and executables to the /home directory
 # on the target rootfs
 
+
 # TODO: Chown the root directory
+# chown root:root ${OUTDIR} 
 
 # TODO: Create initramfs.cpio.gz
 find . | cpio -H newc -ov --owner root:root > ${OUTDIR}/initramfs.cpio
